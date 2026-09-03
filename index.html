@@ -253,16 +253,17 @@
     <div class="puntero"></div>
     <canvas id="ruleta" width="600" height="600"></canvas>
     
-    <div class="image">
+    <!-- Aquí estaba el fallo, el div debe llamarse "logo-central" -->
+    <div class="logo-central">
       <img src="image.png" alt="Logo de la peña">
     </div>
-    <!-- Recuerda subir "logo-central.png" a la misma carpeta que este index.html en GitHub -->
+
   </div>
 
   <button id="btnGirar">¡GIRAR!</button>
 </main>
 
-<footer>PATROCINADO POR LA PEÑA TRALLAZO</footer>
+<footer>Bebe con responsabilidad. Prohibida su venta y consumo a menores de 18 años.</footer>
 
 <!-- Aviso de resultado -->
 <div class="overlay-resultado" id="overlayResultado">
@@ -278,14 +279,6 @@
      CONFIGURACIÓN DE LA RULETA
      -------------------------------------------------------------------------
      Para AÑADIR o QUITAR bebidas, edita el array "opcionesChupitos" de abajo.
-     - Cada elemento es un objeto con dos propiedades:
-         nombre -> el texto que se muestra en el sector y en el aviso final
-         color  -> el color de fondo del sector (en formato hexadecimal)
-     - Puedes tener tantos elementos como quieras (mínimo 2). La ruleta
-       se recalcula y se dibuja automáticamente según el número de elementos.
-     - Si quieres que un color se repita menos, simplemente usa colores
-       distintos en la lista de "paletaColores" de más abajo, o defínelos
-       tú mismo en cada objeto.
      ========================================================================= */
   const opcionesChupitos = [
     { nombre: "TEQUILA",     color: "#ff2e7e" },
@@ -294,13 +287,10 @@
     { nombre: "WHISKY",      color: "#ff6b35" },
     { nombre: "JÄGERMEISTER",color: "#7b2ff7" },
     { nombre: "GINEBRA",     color: "#00b894" },
-    { nombre: "PACHARAN",     color: "#ff4d4d" },
+    { nombre: "SAMBUCA",     color: "#ff4d4d" },
     { nombre: "ABSENTA",     color: "#2ecc71" }
   ];
-  // Paleta de repuesto por si algún objeto no trae "color" definido
   const paletaColores = ["#ff2e7e", "#ffd23f", "#0fd9c4", "#ff6b35", "#7b2ff7", "#00b894", "#ff4d4d", "#2ecc71"];
-
-  /* ========================================================================= */
 
   const canvas = document.getElementById('ruleta');
   const ctx = canvas.getContext('2d');
@@ -316,7 +306,6 @@
   let rotacionAcumulada = 0;
   let girando = false;
 
-  // --- Dibuja la ruleta completa según el array de opciones ---
   function dibujarRuleta() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -325,7 +314,6 @@
       const fin = ((i + 1) * anguloSector) * Math.PI / 180;
       const color = opcion.color || paletaColores[i % paletaColores.length];
 
-      // Sector
       ctx.beginPath();
       ctx.moveTo(radio, radio);
       ctx.arc(radio, radio, radio - 6, inicio, fin);
@@ -336,7 +324,6 @@
       ctx.strokeStyle = "#1b0f3a";
       ctx.stroke();
 
-      // Texto del sector
       ctx.save();
       ctx.translate(radio, radio);
       ctx.rotate((inicio + fin) / 2);
@@ -347,7 +334,6 @@
       ctx.restore();
     });
 
-    // Borde exterior decorativo
     ctx.beginPath();
     ctx.arc(radio, radio, radio - 4, 0, Math.PI * 2);
     ctx.lineWidth = 6;
@@ -355,38 +341,26 @@
     ctx.stroke();
   }
 
-  // --- Calcula qué sector queda bajo el puntero tras girar ---
   function calcularSectorGanador(rotacionFinal) {
-    // El puntero está fijo arriba, en el ángulo 270° del sistema del canvas
-    // (0° = 3 en punto, sentido horario). Buscamos qué ángulo original
-    // del dibujo ha quedado situado bajo esa posición tras la rotación.
     let angulo = (270 - (rotacionFinal % 360) + 360) % 360;
     let indice = Math.floor(angulo / anguloSector) % numSectores;
     return opcionesChupitos[indice];
   }
 
-  // --- Lógica del giro ---
-  // La animación se controla fotograma a fotograma con requestAnimationFrame
-  // en lugar de con una transición CSS. Esto permite:
-  //   1) Una curva de velocidad realista: arranca rápido y va frenando
-  //      progresivamente (easing "easeOutQuart") hasta detenerse del todo.
-  //   2) Mostrar el resultado en el mismo instante exacto en que la ruleta
-  //      se para, sin ningún retraso ni desajuste de tiempos.
   function girarRuleta() {
     if (girando) return;
     girando = true;
     btnGirar.disabled = true;
 
-    const duracionMs = 6000;               // duración total del giro
-    const vueltasCompletas = 8 + Math.floor(Math.random() * 4); // entre 8 y 11 vueltas
-    const extra = Math.random() * 360;      // punto de parada aleatorio
+    const duracionMs = 6000;
+    const vueltasCompletas = 8 + Math.floor(Math.random() * 4);
+    const extra = Math.random() * 360;
     const rotacionInicial = rotacionAcumulada;
     const rotacionObjetivo = rotacionInicial + vueltasCompletas * 360 + extra;
     const diferencia = rotacionObjetivo - rotacionInicial;
     const tiempoInicio = performance.now();
 
     function easeOutQuart(t) {
-      // Empieza muy rápido y la deceleración se hace cada vez más suave
       return 1 - Math.pow(1 - t, 4);
     }
 
@@ -401,7 +375,6 @@
       if (t < 1) {
         requestAnimationFrame(frame);
       } else {
-        // La ruleta acaba de pararse: mostramos el resultado al instante
         girando = false;
         btnGirar.disabled = false;
         const ganador = calcularSectorGanador(rotacionAcumulada);
@@ -412,7 +385,6 @@
     requestAnimationFrame(frame);
   }
 
-  // --- Muestra el aviso central con el chupito ganador ---
   function mostrarResultado(nombre) {
     textoResultado.textContent = `¡${nombre}!`;
     overlay.classList.add('visible');
@@ -428,7 +400,6 @@
     if (e.target === overlay) cerrarResultado();
   });
 
-  // Dibujo inicial
   dibujarRuleta();
 </script>
 
